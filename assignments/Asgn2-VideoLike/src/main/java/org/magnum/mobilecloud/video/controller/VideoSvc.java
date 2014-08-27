@@ -39,24 +39,7 @@ import com.google.common.collect.Lists;
 
 @Controller
 public class VideoSvc {
-	
-	/**
-	 * You will need to create one or more Spring controllers to fulfill the
-	 * requirements of the assignment. If you use this file, please rename it
-	 * to something other than "AnEmptyController"
-	 * 
-	 * 
-		 ________  ________  ________  ________          ___       ___  ___  ________  ___  __       
-		|\   ____\|\   __  \|\   __  \|\   ___ \        |\  \     |\  \|\  \|\   ____\|\  \|\  \     
-		\ \  \___|\ \  \|\  \ \  \|\  \ \  \_|\ \       \ \  \    \ \  \\\  \ \  \___|\ \  \/  /|_   
-		 \ \  \  __\ \  \\\  \ \  \\\  \ \  \ \\ \       \ \  \    \ \  \\\  \ \  \    \ \   ___  \  
-		  \ \  \|\  \ \  \\\  \ \  \\\  \ \  \_\\ \       \ \  \____\ \  \\\  \ \  \____\ \  \\ \  \ 
-		   \ \_______\ \_______\ \_______\ \_______\       \ \_______\ \_______\ \_______\ \__\\ \__\
-		    \|_______|\|_______|\|_______|\|_______|        \|_______|\|_______|\|_______|\|__| \|__|
-                                                                                                                                                                                                                                                                        
-	 * 
-	 */
-	
+
 	
 	// Auto wire in the repo dependency
 	@Autowired
@@ -71,28 +54,25 @@ public class VideoSvc {
 	// get video by id
 	@RequestMapping(value=VideoSvcApi.VIDEO_SVC_PATH+"/{id}", method=RequestMethod.GET)
 	public @ResponseBody Video getVideoById(@PathVariable("id") long id, HttpServletResponse response) {
-		Video v = videos.findOne(id);
-		
-		if (v == null) {
-			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-		}
-		
+
+		Video v = findVideoById(id, response);	
 		return v;
 	}
 	
 	// add video
-	@RequestMapping(value=VideoSvcApi.VIDEO_SVC_PATH,method=RequestMethod.POST)
-	public boolean addVideo(@RequestBody Video video){
-		videos.save(video);
-		return true;
+	@RequestMapping(value=VideoSvcApi.VIDEO_SVC_PATH, method = RequestMethod.POST)
+	public @ResponseBody Video addVideo(@RequestBody Video v) {
+		Video savedVideo = videos.save(v);
+		return savedVideo;
 	}
 	
 	// like video
 	@RequestMapping(value=VideoSvcApi.VIDEO_SVC_PATH+"/{id}/like",method=RequestMethod.POST)
 	public @ResponseBody void likeVideo(@PathVariable("id") long id, HttpServletResponse response, Principal user) {
-		Video v = videos.findOne(id);
+
+		Video v = findVideoById(id, response);
 		if (v == null) {
-			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			// Video not found
 			return;
 		}
 		
@@ -112,9 +92,9 @@ public class VideoSvc {
 	@RequestMapping(value=VideoSvcApi.VIDEO_SVC_PATH+"/{id}/unlike", method=RequestMethod.POST)
 	public @ResponseBody void unlikeVideo(@PathVariable("id") long id, HttpServletResponse response, Principal user) {
 		
-		Video v = videos.findOne(id);
+		Video v = findVideoById(id, response);
 		if (v == null) {
-			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			// Video not found
 			return;
 		}
 		
@@ -148,14 +128,26 @@ public class VideoSvc {
 	@RequestMapping(value=VideoSvcApi.VIDEO_TITLE_SEARCH_PATH, method=RequestMethod.GET)
 	public @ResponseBody Collection<Video> findByTitle(@RequestParam(VideoSvcApi.TITLE_PARAMETER) String title) {
 		
-		return findByTitle(title);
+		return videos.findByName(title);
 	}
+	
 	
 	// find by duration
 	@RequestMapping(value=VideoSvcApi.VIDEO_DURATION_SEARCH_PATH, method=RequestMethod.GET)
-	public @ResponseBody Collection<Video> findByDurationLessThan(@RequestParam(VideoSvcApi.DURATION_PARAMETER) String duration) {
+	public @ResponseBody Collection<Video> findByDurationLessThan(@RequestParam(VideoSvcApi.DURATION_PARAMETER) long maxDuration) {
 		
-		return findByDurationLessThan(duration);
+		return videos.findByDurationLessThan(maxDuration);
+	}
+
+	
+	private Video findVideoById(long id, HttpServletResponse response)
+	{
+		Video v = videos.findOne(id);
+		if (v == null) {
+			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+		}
+		
+		return v;
 	}
 	
 }
